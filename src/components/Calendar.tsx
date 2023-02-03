@@ -23,11 +23,15 @@ const RenderHeader = ({ currentMonth }: CalendarHeaderProps) => {
 
 const RenderDays = () => {
   const days: any[] = [];
-  const date = ['Sun', 'Mon', 'Thu', 'Wed', 'Thur', 'Fri', 'Sat'];
+  const date = ['Sun', 'Mon', 'Thu', 'Wed', 'Thr', 'Fri', 'Sat'];
   for (let i = 0; i < 7; i++) {
-    days.push(<div key={i}>{date[i]}</div>);
+    days.push(
+      <div key={i} className=" bg-[#D587B2] px-2 py-1 rounded-lg">
+        {date[i]}
+      </div>
+    );
   }
-  return <div className="flex flex-row gap-4">{days}</div>;
+  return <div className="flex flex-row gap-3">{days}</div>;
 };
 
 const RenderCells = ({ currentMonth, selectedDate }: CalendarCellProps) => {
@@ -71,7 +75,7 @@ const RenderCells = ({ currentMonth, selectedDate }: CalendarCellProps) => {
       day = addDays(day, 1);
     }
     rows.push(
-      <div key={uuid()} className="grid grid-cols-7 gap-4">
+      <div key={uuid()} className="grid grid-cols-7 gap-8">
         {days}
       </div>
     );
