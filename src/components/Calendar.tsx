@@ -1,78 +1,49 @@
-import { Icon } from '@iconify/react';
-import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  isSameMonth,
-  isSameDay,
-  addDays,
-  parse,
-} from 'date-fns';
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
+import uuid from 'react-uuid';
+import { format, addMonths, startOfWeek, addDays } from 'date-fns';
+import { endOfWeek, isSameDay, isSameMonth } from 'date-fns';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 interface CalendarHeaderProps {
-  currentMonth: number | Date;
-  prevMonth: () => void;
-  nextMonth: () => void;
+  currentMonth: Date;
 }
 
 interface CalendarCellProps {
-  currentMonth: number | Date;
+  currentMonth: Date;
   selectedDate: Date;
-  onDateClick: (value: Date) => void;
 }
 
-const RenderHeader = ({ currentMonth, prevMonth, nextMonth }: CalendarHeaderProps) => {
+const RenderHeader = ({ currentMonth }: CalendarHeaderProps) => {
   return (
-    <div className="w-full flex flex-row items-center justify-between">
-      <div className="flex flex-row">
-        <span>
-          <span className="mr-1">{format(currentMonth, 'M')}월</span>
-          {format(currentMonth, 'yyyy')}
-        </span>
-      </div>
-      <div className="flex flex-row">
-        <Icon icon="bi:arrow-left-circle-fill" className="mr-1" onClick={prevMonth} />
-        <Icon icon="bi:arrow-right-circle-fill" onClick={nextMonth} />
-      </div>
+    <div className="items-center text-center">
+      {currentMonth.toLocaleString('en-US', { month: 'long' })}
     </div>
   );
 };
 
 const RenderDays = () => {
-  const days = [];
-  const date = ['Sun', 'Mon', 'Thu', 'Wed', 'Thrs', 'Fri', 'Sat'];
-
+  const days: any[] = [];
+  const date = ['Sun', 'Mon', 'Thu', 'Wed', 'Thur', 'Fri', 'Sat'];
   for (let i = 0; i < 7; i++) {
-    days.push(
-      <div className="bg-red-300 text-white font-medium px-2" key={i}>
-        {date[i]}
-      </div>
-    );
+    days.push(<div key={i}>{date[i]}</div>);
   }
-
   return <div className="flex flex-row gap-4">{days}</div>;
 };
 
-const RenderCells = ({ currentMonth, selectedDate, onDateClick }: CalendarCellProps) => {
+const RenderCells = ({ currentMonth, selectedDate }: CalendarCellProps) => {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
 
-  const rows = [];
-  let days = [];
+  const rows: any[] = [];
+  let days: any[] = [];
   let day = startDate;
   let formattedDate = '';
 
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
       formattedDate = format(day, 'd');
-      const cloneDay = day;
       days.push(
         <div
           className={`col cell ${
@@ -80,14 +51,19 @@ const RenderCells = ({ currentMonth, selectedDate, onDateClick }: CalendarCellPr
               ? 'disabled'
               : isSameDay(day, selectedDate)
               ? 'selected'
-              : format(currentMonth, 'M') !== format(day, 'M')
-              ? 'not-valid'
-              : 'valid'
+              : 'not-valid'
           }`}
-          key={day.toString()}
-          onClick={() => onDateClick(parse(cloneDay.toDateString(), 'd', new Date()))}
+          key={uuid()}
         >
-          <span className={format(currentMonth, 'M') !== format(day, 'M') ? 'text not-valid' : ''}>
+          <span
+            className={
+              format(currentMonth, 'M') !== format(day, 'M')
+                ? 'text not-valid'
+                : isSameMonth(day, monthStart) && isSameDay(day, selectedDate)
+                ? 'text today'
+                : ''
+            }
+          >
             {formattedDate}
           </span>
         </div>
@@ -95,7 +71,7 @@ const RenderCells = ({ currentMonth, selectedDate, onDateClick }: CalendarCellPr
       day = addDays(day, 1);
     }
     rows.push(
-      <div className="grid grid-cols-7 gap-4 items-center justify-center" key={day.toString()}>
+      <div key={uuid()} className="grid grid-cols-7 gap-4">
         {days}
       </div>
     );
@@ -105,27 +81,37 @@ const RenderCells = ({ currentMonth, selectedDate, onDateClick }: CalendarCellPr
 };
 
 export default function Calender() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const currentDate = new Date();
+  const selectedDate = new Date();
 
-  const prevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
-  const nextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-  const onDateClick = (day: Date) => {
-    setSelectedDate(day);
-  };
+  let currentMonth = new Date(format(currentDate, 'yyyy'));
+  let months: any[] = [];
+
+  const monthRef = useRef<HTMLDivElement>(null);
+
+  for (let i = 0; i < 12; i++) {
+    months.push(
+      <div
+        key={uuid()}
+        ref={format(currentMonth, 'MM') === format(selectedDate, 'MM') ? monthRef : null}
+      >
+        <RenderHeader currentMonth={currentMonth} />
+        <RenderCells currentMonth={currentMonth} selectedDate={selectedDate} />
+      </div>
+    );
+    currentMonth = addMonths(currentMonth, 1);
+  }
+
+  useEffect(() => {
+    if (monthRef.current !== null) {
+      monthRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, []);
+
   return (
     <div>
-      <RenderHeader currentMonth={currentMonth} prevMonth={prevMonth} nextMonth={nextMonth} />
       <RenderDays />
-      <RenderCells
-        currentMonth={currentMonth}
-        selectedDate={selectedDate}
-        onDateClick={onDateClick}
-      />
+      <div className="space-y-2">{months}</div>
     </div>
   );
 }
